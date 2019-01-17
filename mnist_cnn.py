@@ -37,7 +37,7 @@ class Net(nn.Module):
         # 第二层池化  参数为input:x,  kernel:2*2, strike: 2
         x = F.max_pool2d(x, 2, 2)
         # 处理后变为4*4*50
-        # view不知道表示什么, 可能是控制数值范围 >= -1
+        # 补充，view做了reshape操作, 放在这里似乎有点多余？
         x = x.view(-1, 4 * 4 * 50)
         # 全连接层1、激活
         x = F.relu(self.fc1(x))
