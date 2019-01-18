@@ -51,14 +51,21 @@ model.eval()
 corpus = data.Corpus(args.data)
 ntokens = len(corpus.dictionary)
 hidden = model.init_hidden(1)
+# 用不超过ntokens的数字产生一个数字Tensor
 input = torch.randint(ntokens, (1, 1), dtype=torch.long).to(device)
 
 with open(args.outf, 'w') as outf:
     with torch.no_grad():  # no tracking history
         for i in range(args.words):
+            # 参数：(1*1, 2*1*200), output=(1,1,33278)  hidden=(2,1,200)
             output, hidden = model(input, hidden)
+            # squeeze()从size中移除所有维度值为1的维度
+            # div(value) Tensor中的所有值均除以value
+            # exp() Tensor中的所有值均做exp运算
+            # cpu()把数值拷贝到cpu中，如果数值已经在cpu中，那么该函数仅仅返回原来的object
             word_weights = output.squeeze().div(args.temperature).exp().cpu()
             word_idx = torch.multinomial(word_weights, 1)[0]
+            # 把input的的数值修改为word_idx的值
             input.fill_(word_idx)
             word = corpus.dictionary.idx2word[word_idx]
 

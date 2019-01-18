@@ -1,4 +1,5 @@
 # coding: utf-8
+# Tensor中的data属性是递归的，why？
 import argparse
 import time
 import math
@@ -13,7 +14,8 @@ import model
 parser = argparse.ArgumentParser(description='PyTorch Wikitext-2 RNN/LSTM Language Model')
 parser.add_argument('--data', type=str, default='./data/wikitext-2',
                     help='location of the data corpus')
-parser.add_argument('--model', type=str, default='LSTM',
+# 这里我为了调试把默认的改为RNN_RELU
+parser.add_argument('--model', type=str, default='RNN_RELU',
                     help='type of recurrent net (RNN_TANH, RNN_RELU, LSTM, GRU)')
 parser.add_argument('--emsize', type=int, default=200,
                     help='size of word embeddings')
@@ -65,6 +67,10 @@ device = torch.device("cuda" if args.cuda else "cpu")
 
 # arg.data参数为corpus的目录
 corpus = data.Corpus(args.data)
+# corpus.dictionary : 33278对word <==> index
+# corpus.train : 2088628
+# corpus.valid : 217646
+# corpus.test : 245569
 
 # Starting from sequential data, batchify arranges the dataset into columns.
 # For instance, with the alphabet as the sequence and batch size 4, we'd get
@@ -138,18 +144,21 @@ def batchify(data, bsz):
     return data.to(device)
 
 eval_batch_size = 10
-# 对训练数据而言，cl中传入了batch_size
+# 对训练数据而言，cl中传入了batch_size, 默认为20
 # 验证集与测试集batch大小均为10
 
+# type(train_data)==>Tensor, size==>104431*20
 train_data = batchify(corpus.train, args.batch_size)
+# type(val_data)==>Tensor, size==>21764*10
 val_data = batchify(corpus.valid, eval_batch_size)
+# type(test_data)==>Tensor, size==>24556*10
 test_data = batchify(corpus.test, eval_batch_size)
 
 ###############################################################################
 # Build the model
 ###############################################################################
 
-# train+val+test的所有tokens(不重复word)的长度, 说白了就是word与index之间的映射
+# train+val+test的所有tokens(不重复word)的长度, 说白了就是word与index之间的映射的长度
 ntokens = len(corpus.dictionary)
 
 # args.model为网络类型RNN_TANH or RNN_RELU or LSTM or GRU
@@ -158,8 +167,10 @@ ntokens = len(corpus.dictionary)
 # args.nlayers: number of layers 网络层数
 # args.dropout : dropout applied to layers (0 = no dropout) 等会查什么意思
 # args.tied : tie the word embedding and softmax weights 等会查什么意思
-model = model.RNNModel(args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied).to(device)
 
+# RNNModel就是自己构建的网络
+model = model.RNNModel(args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied).to(device)
+# useful when training a classification problem
 criterion = nn.CrossEntropyLoss()
 
 ###############################################################################
@@ -169,6 +180,8 @@ criterion = nn.CrossEntropyLoss()
 def repackage_hidden(h):
     """Wraps hidden states in new Tensors, to detach them from their history."""
     if isinstance(h, torch.Tensor):
+        # detach()返回一个新的Tensor，新的Tensor不参与梯度计算，换言之，拷贝一个Tensor
+        # 并使其从计算图中分离
         return h.detach()
     else:
         return tuple(repackage_hidden(v) for v in h)
@@ -185,8 +198,13 @@ def repackage_hidden(h):
 # to the seq_len dimension in the LSTM.
 
 def get_batch(source, i):
+    # 用len函数来测量的是矩阵的第一个维度大小
+    # 所以说每次操纵的数据为args.bptt的整倍数
+    # 一般来说，seq_len == args.bptt, 但是到最后不一定
     seq_len = min(args.bptt, len(source) - 1 - i)
+    # 最后取得的数据可能不是恰好为args.bptt大小的batch
     data = source[i:i+seq_len]
+    # target是干嘛的？
     target = source[i+1:i+1+seq_len].view(-1)
     return data, target
 
@@ -196,12 +214,17 @@ def evaluate(data_source):
     model.eval()
     total_loss = 0.
     ntokens = len(corpus.dictionary)
+    # 2*10*200
     hidden = model.init_hidden(eval_batch_size)
     with torch.no_grad():
         for i in range(0, data_source.size(0) - 1, args.bptt):
+            # data:35*10, targets:350
             data, targets = get_batch(data_source, i)
+            # 参数：(35*10, 2*10*200), output=(35,10,33278)  hidden=(2,10,200)
             output, hidden = model(data, hidden)
+            # output_flat == > 350*33278
             output_flat = output.view(-1, ntokens)
+            # len(data)=35, 称为sequence length
             total_loss += len(data) * criterion(output_flat, targets).item()
             hidden = repackage_hidden(hidden)
     return total_loss / (len(data_source) - 1)
@@ -212,18 +235,36 @@ def train():
     model.train()
     total_loss = 0.
     start_time = time.time()
+    # 33278
     ntokens = len(corpus.dictionary)
+    # 以batch_size大小初始化隐藏层参数
+    # 以下是在RNN的条件下，当在LSTM的情况下时，hidden为tuple
+    # type(hidden) == > Tensor, hidden.size() == > [2, 20, 200]
+    # args.batch_size为20
     hidden = model.init_hidden(args.batch_size)
     # args.bptt: sequence length
-    # 每次
+    # train_data.size(0)表示总共有多少个batch(与下面代码中的batch不同), train_data.size(1)
+    # 表示batch_size的大小, bptt是序列长度, 也就是一次取多少个batch
+    count = 0
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
+        # type(data)==>Tensor, data.size()===> 35*20, not zero
+        # type(targets)==>Tensor, targets.size()===> 700, not zero
+        # args.bptt is 35
         data, targets = get_batch(train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
+        # 参数中的hidden的size表示为(nlayers, bsz, nhid)
+        # 此时得到的hidden算是原来hidden的副本
         hidden = repackage_hidden(hidden)
+        # Sets gradients of all model parameters to zero.
         model.zero_grad()
+        # 参数：(35*20, 2*20*200), output=(35,20,33278)  hidden=(2,20,200)
+        # 35被称为sequence lenegth   20被称为batch_size   33278被称为num_directions*hidden_size
+        # 上面的话可能有问题
         output, hidden = model(data, hidden)
+        # output.view(-1, ntokens) == > 700*33278
         loss = criterion(output.view(-1, ntokens), targets)
+
         loss.backward()
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
@@ -242,6 +283,10 @@ def train():
                 elapsed * 1000 / args.log_interval, cur_loss, math.exp(cur_loss)))
             total_loss = 0
             start_time = time.time()
+        print("Done!")
+        count += 1
+        if count == 10:
+            break
 
 
 def export_onnx(path, batch_size, seq_len):
@@ -254,14 +299,18 @@ def export_onnx(path, batch_size, seq_len):
 
 
 # Loop over epochs.
+# 默认学习率是20
 lr = args.lr
 best_val_loss = None
 
 # At any point you can hit Ctrl + C to break out of training early.
+# epoch指的是训练轮数
 try:
     for epoch in range(1, args.epochs+1):
         epoch_start_time = time.time()
+        # 完成一轮训练
         train()
+        # 在val_data上进行评估，得出损失值
         val_loss = evaluate(val_data)
         print('-' * 89)
         print('| end of epoch {:3d} | time: {:5.2f}s | valid loss {:5.2f} | '
@@ -269,12 +318,15 @@ try:
                                            val_loss, math.exp(val_loss)))
         print('-' * 89)
         # Save the model if the validation loss is the best we've seen so far.
+        # not None ===> True
+        # 第一次直接进行保存，之后如果val_loss的值比之前的更小则保存当前训练的模型
         if not best_val_loss or val_loss < best_val_loss:
             with open(args.save, 'wb') as f:
                 torch.save(model, f)
             best_val_loss = val_loss
         else:
             # Anneal the learning rate if no improvement has been seen in the validation dataset.
+            # 模型效果变差则立即降低学习率为原来的1/4
             lr /= 4.0
 except KeyboardInterrupt:
     print('-' * 89)
