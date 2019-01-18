@@ -1,1 +1,1 @@
-# pytorchlr some notes
+# pytorchlr
