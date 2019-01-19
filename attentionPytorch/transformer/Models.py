@@ -76,14 +76,20 @@ class Encoder(nn.Module):
         super().__init__()
 
         # max_token_seq_len
+        # len_max_seq为每组数据的长度上限(每组这里指的是batch_size之一)
+        # +1的目的？
         n_position = len_max_seq + 1
 
-        # nn.Embedding : A simple lookup table that stores embeddings
-        # of a fixed dictionary and size. Be often used to store
-        # word embeddings and retrieve them using indices.
+        # 放个关于nn.Embedding的链接:https://ptorch.com/news/12.html
+
+        # 假设input尺寸为(M,K)(任意一个数不能超过n_src_vocab-1),
+        # 则ouput尺寸为(M,K,d_word_vec),
+        # 当使用src_word_emb(input)时，　只要input中的某个word含有Constants.PAD,
+        # 那么与那一个word相对应的d_word_vec个数全部设置为０
         self.src_word_emb = nn.Embedding(
             n_src_vocab, d_word_vec, padding_idx=Constants.PAD)
 
+        #
         self.position_enc = nn.Embedding.from_pretrained(
             get_sinusoid_encoding_table(n_position, d_word_vec, padding_idx=0),
             freeze=True)
@@ -178,7 +184,7 @@ class Decoder(nn.Module):
 #         d_k=opt.d_k
 #         d_v=opt.d_v
 #         d_model=opt.d_model
-#         d_word_vec=opt.d_word_vec
+#         d_word_vec=opt.d_word_vec, the size of each embedding vector，default:512
 #         d_inner=opt.d_inner_hid
 #         n_layers=opt.n_layers
 #         n_head=opt.n_head

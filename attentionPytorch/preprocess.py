@@ -22,7 +22,7 @@ def read_instances_from_file(inst_file, max_sent_len, keep_case):
             # 丢弃多余的
             word_inst = words[:max_sent_len]
 
-            # 使用<s>与</s>来作为句子的界
+            # 使用<s>与</s>来作为句子的界, 嵌套列表
             if word_inst:
                 word_insts += [[Constants.BOS_WORD] + word_inst + [Constants.EOS_WORD]]
             else:
@@ -39,7 +39,7 @@ def read_instances_from_file(inst_file, max_sent_len, keep_case):
 
 def build_vocab_idx(word_insts, min_word_count):
     ''' Trim vocab by number of occurence '''
-    # 拆分为word, 变为集合去掉重复
+    # 拆分为word, 变为集合去掉重复, 即src/tgt中所有不重复word的集合
     full_vocab = set(w for sent in word_insts for w in sent)
     print('[Info] Original Vocabulary size =', len(full_vocab))
 
@@ -56,23 +56,29 @@ def build_vocab_idx(word_insts, min_word_count):
             word_count[word] += 1
 
     ignored_word_count = 0
+
+    # word_count中存放的是word: count
+    # word2idx
     for word, count in word_count.items():
         if word not in word2idx:
             # 某个word的数量大于给定的min_word_count数量
             if count > min_word_count:
-                # 该word编号为当前长度，所有word的编号不会重复
+                # 该word编号为当前长度，所有count > min_word_count的编号不会重复
                 word2idx[word] = len(word2idx)
             else:
                 ignored_word_count += 1
+    # 所有word_count小于min_word_count的word都被丢弃掉
 
     print('[Info] Trimmed vocabulary size = {},'.format(len(word2idx)),
           'each with minimum occurrence = {}'.format(min_word_count))
     print("[Info] Ignored word count = {}".format(ignored_word_count))
+    # 返回之前我需要保证word2idx的 key-value 之间是双向唯一的
     return word2idx
 
 def convert_instance_to_idx_seq(word_insts, word2idx):
     ''' Mapping words to idx sequence. '''
     # 获取word_insts中每个单词的编号, 没有的话编号为1
+    # 也就是说所有编号为1的单词都是无效的单词
     return [[word2idx.get(w, Constants.UNK) for w in s] for s in word_insts]
 
 def main():
@@ -98,13 +104,17 @@ def main():
     opt.max_token_seq_len = opt.max_word_seq_len + 2 # include the <s> and </s>
 
     # Training set
+    # train_src_word_insts的格式， [[], [], [], []]...   len:29000, 里面的每一个元素
+    # 为一句话中的 <s> + word0 + word1 + word2 + ... + </s>
     train_src_word_insts = read_instances_from_file(
         opt.train_src, opt.max_word_seq_len, opt.keep_case)
+    # train_tgt_word_insts与train_src_word_insts类似
     train_tgt_word_insts = read_instances_from_file(
         opt.train_tgt, opt.max_word_seq_len, opt.keep_case)
 
+    # 长度应该是相等的，但对应位置元素的个数是不等的
     if len(train_src_word_insts) != len(train_tgt_word_insts):
-        # 此处的处理方法是否正确？
+        # 此处的处理方法是否正确？ 正确
         print('[Warning] The training instance count is not equal.')
         min_inst_count = min(len(train_src_word_insts), len(train_tgt_word_insts))
         train_src_word_insts = train_src_word_insts[:min_inst_count]
@@ -112,6 +122,7 @@ def main():
 
     #- Remove empty instances
     # 去掉了None而且元素个数保持相等
+    # zip(*zipped)是用来解压的, 仅仅用来移除None
     train_src_word_insts, train_tgt_word_insts = list(zip(*[
         (s, t) for s, t in zip(train_src_word_insts, train_tgt_word_insts) if s and t]))
 

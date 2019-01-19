@@ -251,7 +251,9 @@ def main():
     # 获取每句话的最大token数量
     opt.max_token_seq_len = data['settings'].max_token_seq_len
 
+    # training_data/validation_data结构有点复杂, 不分析应该也没问题
     training_data, validation_data = prepare_dataloaders(data, opt)
+
     # 所有不重复单词的数量
     # 2911
     opt.src_vocab_size = training_data.dataset.src_vocab_size
@@ -298,12 +300,21 @@ def prepare_dataloaders(data, opt):
     # 一般采用默认即可，除非你自定义的数据读取输出非常少见
     # 跳过collate_fn
     train_loader = torch.utils.data.DataLoader(
+        # TranslateionDataset参数中前两个是索引，后两个是数据, 其它的都不重要，重要的是这个类
+        #　必须实现Dataset的接口，即__len__方法与__getitem__方法
+        #　len方法用来获取数据集长度即src_insts长度，　getitem(i), 用来获取第ｉ个数据,
+        # 即(src_insts[i], tgt_insts[i])
+        # 这里写paired_collate_fn函数的原因应该是getitem(index)方法返回的
+        # 不是单个数据，而是一个元组
+        # shuffle : set to True to have the data reshuffled at every epoch
         TranslationDataset(
             src_word2idx=data['dict']['src'],
             tgt_word2idx=data['dict']['tgt'],
             src_insts=data['train']['src'],
             tgt_insts=data['train']['tgt']),
+        # load data用到的线程数为２
         num_workers=2,
+        # batch_size此处为64
         batch_size=opt.batch_size,
         collate_fn=paired_collate_fn,
         shuffle=True)
