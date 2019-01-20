@@ -4,6 +4,7 @@ import numpy as np
 
 __author__ = "Yu-Hsiang Huang"
 
+# temperature = 8
 class ScaledDotProductAttention(nn.Module):
     ''' Scaled Dot-Product Attention '''
 
@@ -11,6 +12,8 @@ class ScaledDotProductAttention(nn.Module):
         super().__init__()
         self.temperature = temperature
         self.dropout = nn.Dropout(attn_dropout)
+        # nn.Softmax的dim，只需记得是在最后一个维度上做Softmax，这样得到的结果总是
+        # 正确的
         self.softmax = nn.Softmax(dim=2)
 
     def forward(self, q, k, v, mask=None):

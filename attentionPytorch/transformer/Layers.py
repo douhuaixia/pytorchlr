@@ -4,17 +4,28 @@ from transformer.SubLayers import MultiHeadAttention, PositionwiseFeedForward
 
 __author__ = "Yu-Hsiang Huang"
 
-
+# d_model: 512
+# d_inner: 2048
+# n_head : 8
+# d_k : 64
+# d_V : 64
+# dropout : 0.1
 class EncoderLayer(nn.Module):
     ''' Compose with two layers '''
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
         super(EncoderLayer, self).__init__()
+        # 自注意力机制，重复d_head = 8次
         self.slf_attn = MultiHeadAttention(
             n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
 
+    # 参数尺寸为
+    # enc_input : 64*(max_len-1)*512
+    # slf_attn_mask: 64*(max_len-1)*(max_len-1)
+    # non_pad_mask : 64*(max_len-1)*1
     def forward(self, enc_input, non_pad_mask=None, slf_attn_mask=None):
+        # self.slf_attn的输入为3个enc_input + mask
         enc_output, enc_slf_attn = self.slf_attn(
             enc_input, enc_input, enc_input, mask=slf_attn_mask)
         enc_output *= non_pad_mask

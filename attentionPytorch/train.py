@@ -61,16 +61,22 @@ def train_epoch(model, training_data, optimizer, device, smoothing):
     n_word_total = 0
     n_word_correct = 0
 
+    # tqdm用来显示进度条
     for batch in tqdm(
             training_data, mininterval=2,
             desc='  - (Training)   ', leave=False):
 
+        # batch就是paired_collate_fn的返回值为4个Tensor  64*...
         # prepare data
         src_seq, src_pos, tgt_seq, tgt_pos = map(lambda x: x.to(device), batch)
+        # 假设tgt_seq大小为64*30， 则丢弃64*1这一列，剩余64*29
+        # 丢弃的东西是<s>
         gold = tgt_seq[:, 1:]
 
         # forward
+        # 优化等会再看
         optimizer.zero_grad()
+        # 关键点，
         pred = model(src_seq, src_pos, tgt_seq, tgt_pos)
 
         # backward
@@ -144,6 +150,7 @@ def train(model, training_data, validation_data, optimizer, device, opt):
             log_vf.write('epoch,loss,ppl,accuracy\n')
 
     valid_accus = []
+    # opt.epoch = 10
     for epoch_i in range(opt.epoch):
         print('[ Epoch', epoch_i, ']')
 
@@ -246,7 +253,11 @@ def main():
     # 1 settings: 是一个argparse中的Namespace
     # 2 dict: {src: 2911组， tgt: 3149组}, 每个组是word以及它的编号, 2911组在一个dict中
     # 3 train:{src:29000组数字,tgt：29000组数字}, 每一组表示一句sentence包含的所有word的编号, 每一组在一个list中
+    # 每一组的长度可以不同，也就是输入的长度可以不同，输出的长度也可以不同, 于是这里就有一个问题了，
+    #　长度不一致该如何处理？
     # 4 valid:{src:1014组数字， tgt：1014组数字}
+
+    # Transformer到底是如何把输入转换为不同维度的输出的。
     data = torch.load(opt.data)
     # 获取每句话的最大token数量
     opt.max_token_seq_len = data['settings'].max_token_seq_len
@@ -307,6 +318,7 @@ def prepare_dataloaders(data, opt):
         # 这里写paired_collate_fn函数的原因应该是getitem(index)方法返回的
         # 不是单个数据，而是一个元组
         # shuffle : set to True to have the data reshuffled at every epoch
+        # shuffle使得每轮训练取得的batch顺序不同
         TranslationDataset(
             src_word2idx=data['dict']['src'],
             tgt_word2idx=data['dict']['tgt'],

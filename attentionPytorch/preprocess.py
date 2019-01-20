@@ -68,7 +68,7 @@ def build_vocab_idx(word_insts, min_word_count):
             else:
                 ignored_word_count += 1
     # 所有word_count小于min_word_count的word都被丢弃掉
-
+    # 个数太少不具备统计意义？
     print('[Info] Trimmed vocabulary size = {},'.format(len(word2idx)),
           'each with minimum occurrence = {}'.format(min_word_count))
     print("[Info] Ignored word count = {}".format(ignored_word_count))
@@ -78,7 +78,7 @@ def build_vocab_idx(word_insts, min_word_count):
 def convert_instance_to_idx_seq(word_insts, word2idx):
     ''' Mapping words to idx sequence. '''
     # 获取word_insts中每个单词的编号, 没有的话编号为1
-    # 也就是说所有编号为1的单词都是无效的单词
+    # 也就是说所有编号为1的单词都是数量非常非常少的单词, 全部用<unk>来代替
     return [[word2idx.get(w, Constants.UNK) for w in s] for s in word_insts]
 
 def main():
@@ -159,6 +159,7 @@ def main():
                 train_src_word_insts + train_tgt_word_insts, opt.min_word_count)
             src_word2idx = tgt_word2idx = word2idx
         else:
+            # 构建word->index字典
             print('[Info] Build vocabulary for source.')
             src_word2idx = build_vocab_idx(train_src_word_insts, opt.min_word_count)
             print('[Info] Build vocabulary for target.')

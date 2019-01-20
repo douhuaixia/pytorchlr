@@ -25,7 +25,8 @@ def paired_collate_fn(insts):
 
 def collate_fn(insts):
     ''' Pad the instance to the max seq length in batch '''
-    # 获取当前ｂatch_size个列表中长度最长的列表大小
+    # 获取当前ｂatch_size个列表中长度最长的列表大小, 其实这里也可以直接用max_token_seq_len,
+    # 不这样做大概是为了节省空间
     max_len = max(len(inst) for inst in insts)
 
     # 通过填充0来对齐多维数组
@@ -39,17 +40,15 @@ def collate_fn(insts):
     # False, 但是可以作为用作if语句的条件判断
 
     # Constants.PAD代表<blank>
-    # 在batch_pos中所有非０的数字在batch_seq中均是有意义的，
 
-    # 这里没有考虑到batch_seq中的1， 1应该也是没有意义的，1的索引
-    # 根本没有存, 1的问题之后再看看
+    # batch_pos应该是句子中的序列编号从1开始，不存在的单词位置(被用0填充的单词)全部编号为0
     batch_pos = np.array([
         [pos_i+1 if w_i != Constants.PAD else 0
          for pos_i, w_i in enumerate(inst)] for inst in batch_seq])
 
     batch_seq = torch.LongTensor(batch_seq)
-    batch_pos = torch.LongTensor(batch_pos)
 
+    batch_pos = torch.LongTensor(batch_pos)
     return batch_seq, batch_pos
 
 class TranslationDataset(torch.utils.data.Dataset):
