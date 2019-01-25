@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="e892771c-4d2e-4ef7-9c1f-6c431895be00" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/transformer/Layers.py" beforeDir="false" afterPath="$PROJECT_DIR$/transformer/Layers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/transformer/Models.py" beforeDir="false" afterPath="$PROJECT_DIR$/transformer/Models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/transformer/SubLayers.py" beforeDir="false" afterPath="$PROJECT_DIR$/transformer/SubLayers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../pytorch的API.md" beforeDir="false" afterPath="$PROJECT_DIR$/../pytorch的API.md" afterDir="false" />
-    </list>
+    <list default="true" id="e892771c-4d2e-4ef7-9c1f-6c431895be00" name="Default Changelist" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,7 +52,7 @@
     <session id="-823357760">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="15" />
+          <entry key="project.closed" value="16" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.1" value="1" />
           <entry key="project.open.time.5" value="6" />
@@ -70,12 +64,12 @@
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Python Console" value="845" />
-          <entry key="py" value="44006" />
+          <entry key="py" value="44028" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="44851" />
+          <entry key="Python" value="44873" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -137,8 +131,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/transformer/SubLayers.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="132">
-                  <caret line="87" column="26" selection-start-line="87" selection-start-column="26" selection-end-line="87" selection-end-column="26" />
+                <state>
+                  <caret line="77" column="22" selection-start-line="77" selection-start-column="22" selection-end-line="77" selection-end-column="22" />
                   <folding>
                     <element signature="e#54#72#0" expanded="true" />
                   </folding>
@@ -215,9 +209,9 @@
         <option value="$PROJECT_DIR$/dataset.py" />
         <option value="$PROJECT_DIR$/train.py" />
         <option value="$PROJECT_DIR$/transformer/Modules.py" />
-        <option value="$PROJECT_DIR$/transformer/SubLayers.py" />
         <option value="$PROJECT_DIR$/transformer/Models.py" />
         <option value="$PROJECT_DIR$/transformer/Layers.py" />
+        <option value="$PROJECT_DIR$/transformer/SubLayers.py" />
       </list>
     </option>
   </component>
@@ -744,8 +738,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/transformer/SubLayers.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="132">
-          <caret line="87" column="26" selection-start-line="87" selection-start-column="26" selection-end-line="87" selection-end-column="26" />
+        <state>
+          <caret line="77" column="22" selection-start-line="77" selection-start-column="22" selection-end-line="77" selection-end-column="22" />
           <folding>
             <element signature="e#54#72#0" expanded="true" />
           </folding>
