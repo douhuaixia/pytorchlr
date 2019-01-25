@@ -158,6 +158,7 @@ class Encoder(nn.Module):
         # , 这个东西才是真正意义上的最底层encoder输入
         enc_output = self.src_word_emb(src_seq) + self.position_enc(src_pos)
         # 堆叠的encoder， N = 6
+
         for enc_layer in self.layer_stack:
             enc_output, enc_slf_attn = enc_layer(
                 enc_output,
@@ -255,6 +256,20 @@ class Transformer(nn.Module):
 
         super().__init__()
 
+        # encoder中forward需要的参数有输入的src_word_embeddings、src_position_message
+        # encoder网络需要的参数有
+        # 1. src中词的大小: 用于src nn.Embedding的第一个参数
+        # 2. 每一句sentence的最大数量: 用于src_pos nn.Embedding中，控制其绝对位置
+        # 3. 词向量的大小:  用于src  nn.Embedding的第二个参数
+
+        # encoder_layer即multiheadattention + feed_fordward
+        # 4. d_model的大小: 用于encoder_layer
+        # 5. d_inner的大小: 用于encoder_layer
+        # 6. encoder的层数: 几个encoder_layer
+        # 7. multiheadattention的h的大小: 用于encoder_layer
+        # 8. query、key的维度d_k: 用于encoder_layer
+        # 9. value的维度d_v: 用于encoder_layer
+        # 10. 可有可无的dropout
         self.encoder = Encoder(
             n_src_vocab=n_src_vocab, len_max_seq=len_max_seq,
             d_word_vec=d_word_vec, d_model=d_model, d_inner=d_inner,

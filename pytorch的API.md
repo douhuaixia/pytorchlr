@@ -14,6 +14,8 @@
 
    - narrow：
 
+   - permute:
+
    - unsqueeze：参数为input tensor， dim； dim范围为[-input.dim()-1, input.dim()+1], 对与dim >=0而言表示增加的维度是第几个维度，它的大小为1
 
    以上几个函数有一个共同的特点是并没有在内存中分配空间给它们，它们都是作用在原来的张量上，他们与原张量共享相同的内存，修改其中一个会影响到另一个，因而出现了contiguous函数，在非contiguous张量上面调用contiguous函数会为其分配内存空间。

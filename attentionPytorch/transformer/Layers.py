@@ -16,8 +16,9 @@ class EncoderLayer(nn.Module):
 
     def __init__(self, d_model, d_inner, n_head, d_k, d_v, dropout=0.1):
         super(EncoderLayer, self).__init__()
-        # 自注意力机制，重复d_head = 8次
-        # 包含了ADD&NORM
+        # 多头注意力机制，重复d_head = 8次, 包含了ADD&NORM
+        # MultiHeadAttention中的forward需要的参数有Q、K、V以及mask
+        # MultiHeadAttention网络需要的参数有n_head, d_model, d_k, d_v
         self.slf_attn = MultiHeadAttention(
             n_head, d_model, d_k, d_v, dropout=dropout)
         self.pos_ffn = PositionwiseFeedForward(d_model, d_inner, dropout=dropout)
@@ -29,6 +30,8 @@ class EncoderLayer(nn.Module):
     def forward(self, enc_input, non_pad_mask=None, slf_attn_mask=None):
         # self.slf_attn的输入为3个相同的enc_input + mask
         # 需要注意的是这里的mask仅仅是为了抹除<blank>
+        # 如果在multiheadattention中没有调用contiguous,那么结果会直接影响到
+        # enc_input
         enc_output, enc_slf_attn = self.slf_attn(
             enc_input, enc_input, enc_input, mask=slf_attn_mask)
         # 这里的non_pad_mask同样是为了抹除<blank>, 对应位置相乘

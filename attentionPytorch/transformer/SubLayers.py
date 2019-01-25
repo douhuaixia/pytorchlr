@@ -81,9 +81,12 @@ class MultiHeadAttention(nn.Module):
         # permute也可以用来转置, 参数为维度，参数为多个，作用是转置多个维度，这个一般用于多维数组
         # 转置有什么用处？
 
-        # contiguous为调用它的非contiguous张量分配内存空间, 这里似乎不用调用contiguous方法
+        # contiguous为调用它的非contiguous张量分配内存空间, 官方文档没有提到，permute的
+        # 结果是non-contiguous的，因而这里一定要调用contiguous方法
+        # 如果不调用的话，
 
         # 很难理解, 唉! permute与view结合是什么操作
+        #　卡在这好长时间，暂时不看了
         q = q.permute(2, 0, 1, 3).contiguous().view(-1, len_q, d_k) # (n*b) x lq x dk
         k = k.permute(2, 0, 1, 3).contiguous().view(-1, len_k, d_k) # (n*b) x lk x dk
         v = v.permute(2, 0, 1, 3).contiguous().view(-1, len_v, d_v) # (n*b) x lv x dv
