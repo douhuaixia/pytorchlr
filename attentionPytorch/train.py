@@ -114,6 +114,8 @@ def eval_epoch(model, validation_data, device):
 
             # prepare data
             src_seq, src_pos, tgt_seq, tgt_pos = map(lambda x: x.to(device), batch)
+
+            # 丢弃第一列
             gold = tgt_seq[:, 1:]
 
             # forward
@@ -241,6 +243,8 @@ def main():
     # -label_smoothing参数可选， 有为true，无为false
     parser.add_argument('-label_smoothing', action='store_true')
 
+    # Tensor是一个多维数组，矩阵特指二维数组，向量的维度是向量中元素的个数
+
     opt = parser.parse_args()
     # cuda为true表示可以使用，为false则不用gpu, 原来的no_cuda依然存在
     opt.cuda = not opt.no_cuda
@@ -259,7 +263,9 @@ def main():
 
     # Transformer到底是如何把输入转换为不同维度的输出的。
     data = torch.load(opt.data)
-    # 获取每句话的最大token数量
+    # 获取每句话的最大token数量, 这里的max_token_seq_len感觉上应该不能超过d_model,由于添加了
+    #　位置信息，ｄ_model的每一项的输出都是代表了一个单词的，同样的问题是，这样来说输出长度应该是
+    # 与输入长度是相同的。
     opt.max_token_seq_len = data['settings'].max_token_seq_len
 
     # training_data/validation_data结构有点复杂, 不分析应该也没问题
