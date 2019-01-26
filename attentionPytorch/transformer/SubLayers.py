@@ -67,9 +67,9 @@ class MultiHeadAttention(nn.Module):
         # w_qs(q) w_ks(k)  尺寸为(batch, m, h*d_k)
         # w_vs(v)  尺寸为(batch, m, h*d_v)
 
-        # 这里为什么使用view? 可以看出重新排列不会影响batch、m的位置
-        # 而且也无法使用转置，因为维度是需要增加的, 转置的话维度是不变的
-        # 这么一来，对于self-attention，ｑ k v结果就不一样了, 但是公式就是这么做的
+        # 重新排列不会影响batch、m的位置
+        # 现在给定一个点(a, b, c, d), 表示的含义是一个batch中第a句话，第b个单词，第c次attention，结果为d维度
+        # 这里画图可以理解
         q = self.w_qs(q).view(sz_b, len_q, n_head, d_k)  # (batch, m, h, d_k)
         k = self.w_ks(k).view(sz_b, len_k, n_head, d_k)  # (batch, m, h, d_k)
         v = self.w_vs(v).view(sz_b, len_v, n_head, d_v)  # (batch, m, h, d_v)
@@ -87,6 +87,8 @@ class MultiHeadAttention(nn.Module):
 
         # 很难理解, 唉! permute与view结合是什么操作
         #　卡在这好长时间，暂时不看了
+        # 转置的话，只不过是交换一些位置，permute之后，(a, b, c, d)表示的含义是第a次attention、一个batch中的第b句话，第c个单词，结果为d维度
+        # 改天把整个流程图画出来，
         q = q.permute(2, 0, 1, 3).contiguous().view(-1, len_q, d_k) # (n*b) x lq x dk
         k = k.permute(2, 0, 1, 3).contiguous().view(-1, len_k, d_k) # (n*b) x lk x dk
         v = v.permute(2, 0, 1, 3).contiguous().view(-1, len_v, d_v) # (n*b) x lv x dv
@@ -96,8 +98,10 @@ class MultiHeadAttention(nn.Module):
         # 执行完下面这句变为(512, max_len, max_len)
         mask = mask.repeat(n_head, 1, 1) # (n*b) x .. x ..
         # attn, output(batch*h, m, d_v), attn是没有与v相乘之前的
+        # self-attention
         output, attn = self.attention(q, k, v, mask=mask)
 
+        # view之后相对位置依旧不变，
         # (h, batch, m, d_v )
         output = output.view(n_head, sz_b, len_q, d_v)
         # (batch, m, h*d_v)

@@ -1,6 +1,9 @@
+# 命令行参数控制
 import configargparse
+# 根据类似unix shell的正则表达式规则匹配
 import glob
 import os
+# 
 import codecs
 import gc
 
